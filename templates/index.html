@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes Explorer</title>
+    <meta name="description" content="A premium, interactive dashboard for exploring, filtering, and sharing BigQuery release notes.">
+    <!-- Google Fonts: Outfit (headings) and Inter (body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Floating Header -->
+        <header class="app-header">
+            <div class="header-logo-section">
+                <div class="logo-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 18H11V16H13V18ZM13 14H11V6H13V14Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>BigQuery Release Notes</h1>
+                    <span class="logo-subtext">Google Cloud Platform Feed</span>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <button id="theme-toggle" class="btn-icon" aria-label="Toggle light/dark theme" title="Toggle theme">
+                    <!-- Sun Icon (shown in dark theme) -->
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <!-- Moon Icon (shown in light theme) -->
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+                
+                <div class="sync-status">
+                    <span class="status-dot green"></span>
+                    <span id="sync-text">Loading feed...</span>
+                </div>
+                
+                <button id="refresh-button" class="btn-primary" aria-label="Refresh release notes" title="Refresh Feed">
+                    <svg id="refresh-icon" class="" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                    </svg>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="app-main">
+            <!-- Stats Dashboard Banner -->
+            <section class="stats-banner" aria-label="Updates Statistics">
+                <div class="stat-card" data-category="All">
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-label">Total Updates</div>
+                </div>
+                <div class="stat-card" data-category="Feature">
+                    <div class="stat-value" id="stat-features">0</div>
+                    <div class="stat-label">Features</div>
+                </div>
+                <div class="stat-card" data-category="Change">
+                    <div class="stat-value" id="stat-changes">0</div>
+                    <div class="stat-label">Changes</div>
+                </div>
+                <div class="stat-card" data-category="Issue">
+                    <div class="stat-value" id="stat-issues">0</div>
+                    <div class="stat-label">Issues / Fixes</div>
+                </div>
+                <div class="stat-card" data-category="Announcement">
+                    <div class="stat-value" id="stat-announcements">0</div>
+                    <div class="stat-label">Announcements</div>
+                </div>
+            </section>
+
+            <!-- Search and Filter Controls -->
+            <section class="controls-panel">
+                <div class="search-wrapper">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="search-input" placeholder="Search update notes by keywords (e.g. Gemini, SQL, pricing)..." aria-label="Search release notes">
+                    <button id="search-clear-btn" class="btn-clear" style="display: none;" aria-label="Clear search">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="filter-wrapper">
+                    <div class="filter-pills" id="category-pills">
+                        <button class="pill active" data-filter="All">All</button>
+                        <button class="pill" data-filter="Feature">Features</button>
+                        <button class="pill" data-filter="Change">Changes</button>
+                        <button class="pill" data-filter="Issue">Issues</button>
+                        <button class="pill" data-filter="Deprecation">Deprecations</button>
+                        <button class="pill" data-filter="Announcement">Announcements</button>
+                    </div>
+                    
+                    <div class="sort-selector">
+                        <label for="sort-select" class="sr-only">Sort by Date</label>
+                        <select id="sort-select" aria-label="Sort order">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Release Notes Stream -->
+            <section class="stream-container" id="stream-container">
+                <!-- Skeleton loader -->
+                <div class="skeleton-stream" id="skeleton-loader">
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                </div>
+                
+                <!-- Notes will be loaded here dynamically -->
+                <div class="release-list" id="release-list"></div>
+                
+                <!-- Empty State -->
+                <div class="empty-state" id="empty-state" style="display: none;">
+                    <div class="empty-icon">🔎</div>
+                    <h3>No release notes match your filters</h3>
+                    <p>Try searching for different keywords or resetting your active category.</p>
+                    <button id="reset-filters-btn" class="btn-secondary">Reset Filters</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer-bar">
+            <p>BigQuery Release Notes Explorer &bull; Built with Flask &amp; Vanilla Web Technologies</p>
+        </footer>
+    </div>
+
+    <!-- Beautiful Glassmorphic Tweet Composer Modal -->
+    <div id="tweet-modal" class="modal-overlay" aria-hidden="true" role="dialog" aria-labelledby="modal-title">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 id="modal-title">Tweet this Update</h2>
+                <button id="close-modal-btn" class="btn-icon" aria-label="Close modal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Reference Card -->
+                <div class="modal-reference-section">
+                    <span class="reference-label">Selected Note:</span>
+                    <div id="modal-reference-card" class="reference-card">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Composer Area -->
+                <div class="composer-section">
+                    <div class="composer-header">
+                        <label for="tweet-textarea" class="composer-label">Edit Tweet Draft:</label>
+                        <div class="composer-suggestions">
+                            <button class="btn-suggestion" data-tag="#BigQuery">#BigQuery</button>
+                            <button class="btn-suggestion" data-tag="#GCP">#GCP</button>
+                            <button class="btn-suggestion" data-tag="#GoogleCloud">#GoogleCloud</button>
+                        </div>
+                    </div>
+                    
+                    <div class="textarea-wrapper">
+                        <textarea id="tweet-textarea" rows="5" maxlength="280" placeholder="What's happening? (Limit 280 characters)..."></textarea>
+                    </div>
+                    
+                    <div class="composer-footer">
+                        <div class="char-count-wrapper">
+                            <span id="char-counter">0 / 280</span>
+                            <div class="char-progress-bar">
+                                <div id="char-progress-fill" class="char-progress-fill"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="composer-actions">
+                            <button id="modal-cancel-btn" class="btn-secondary">Cancel</button>
+                            <button id="modal-tweet-btn" class="btn-tweet">
+                                <!-- X / Twitter Logo Icon -->
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                                </svg>
+                                <span>Post to X</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast-notification" class="toast" role="alert" aria-live="polite">
+        <span id="toast-message">Success!</span>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
