@@ -1,5 +1,6 @@
 // Global application state
 let allReleases = [];
+let filteredReleases = [];
 let currentCategoryFilter = 'All';
 let currentSearchQuery = '';
 let currentSortOrder = 'newest';
@@ -14,6 +15,7 @@ const searchInput = document.getElementById('search-input');
 const searchClearBtn = document.getElementById('search-clear-btn');
 const categoryPills = document.getElementById('category-pills');
 const sortSelect = document.getElementById('sort-select');
+const exportCsvBtn = document.getElementById('export-csv-button');
 const releaseList = document.getElementById('release-list');
 const skeletonLoader = document.getElementById('skeleton-loader');
 const emptyState = document.getElementById('empty-state');
@@ -203,6 +205,9 @@ function filterAndRenderReleases() {
         return currentSortOrder === 'newest' ? dateB - dateA : dateA - dateB;
     });
     
+    // Save active filtered view for CSV export
+    filteredReleases = filtered;
+    
     // 4. Render output
     releaseList.innerHTML = '';
     
@@ -235,17 +240,50 @@ function createNoteCard(note) {
                 <span class="category-badge">${note.category}</span>
                 <time class="note-date" datetime="${note.updated_raw}">${note.date}</time>
             </div>
-            <button class="btn-tweet-action" aria-label="Tweet this specific update">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-                <span>Tweet</span>
-            </button>
+            <div class="note-actions">
+                <button class="btn-copy-action" aria-label="Copy this specific update to clipboard" title="Copy update text">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <span>Copy</span>
+                </button>
+                <button class="btn-tweet-action" aria-label="Tweet this specific update" title="Tweet update">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                    <span>Tweet</span>
+                </button>
+            </div>
         </div>
         <div class="note-content">
             ${note.description}
         </div>
     `;
+    
+    // Add Event Listener to Copy Button
+    const copyBtn = card.querySelector('.btn-copy-action');
+    copyBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const plainText = stripHtml(note.description).replace(/\s+/g, ' ').trim();
+        const textToCopy = `[${note.category}] - ${note.date}\n${plainText}`;
+        
+        try {
+            await navigator.clipboard.writeText(textToCopy);
+            copyBtn.classList.add('copied');
+            const spanText = copyBtn.querySelector('span');
+            spanText.textContent = 'Copied!';
+            showToast('Note copied to clipboard!', 'success');
+            
+            setTimeout(() => {
+                copyBtn.classList.remove('copied');
+                spanText.textContent = 'Copy';
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+            showToast('Failed to copy to clipboard', 'error');
+        }
+    });
     
     // Add Event Listener to Tweet Button
     const tweetBtn = card.querySelector('.btn-tweet-action');
@@ -415,6 +453,11 @@ refreshBtn.addEventListener('click', () => {
     fetchReleases(true);
 });
 
+// Export CSV button trigger
+if (exportCsvBtn) {
+    exportCsvBtn.addEventListener('click', handleExportCSV);
+}
+
 // Modal Events
 closeModalBtn.addEventListener('click', closeTweetModal);
 modalCancelBtn.addEventListener('click', closeTweetModal);
@@ -458,3 +501,56 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     fetchReleases(false); // Fetch on load, use cache if available
 });
+
+// --- Export to CSV Utilities ---
+
+// Converts release notes array to structured CSV format
+function convertToCSV(objArray) {
+    const fields = ['date', 'category', 'description'];
+    const header = ['Date', 'Category', 'Description'].join(',') + '\r\n';
+    
+    const rows = objArray.map(item => {
+        return fields.map(fieldName => {
+            let val = item[fieldName] || '';
+            if (fieldName === 'description') {
+                val = stripHtml(val);
+            }
+            val = val.replace(/\s+/g, ' ').trim();
+            val = val.replace(/"/g, '""');
+            return `"${val}"`;
+        }).join(',');
+    });
+    
+    return header + rows.join('\r\n');
+}
+
+// Downloads the currently visible release notes view as a CSV file
+function handleExportCSV() {
+    const targetData = (currentCategoryFilter === 'All' && currentSearchQuery.trim() === '')
+        ? allReleases
+        : filteredReleases;
+        
+    if (targetData.length === 0) {
+        showToast("No release notes found in current view to export!", "error");
+        return;
+    }
+    
+    const csvContent = convertToCSV(targetData);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    
+    const dateStr = new Date().toISOString().split('T')[0];
+    const categoryName = currentCategoryFilter.toLowerCase().replace(/\s+/g, '-');
+    const filename = `bigquery-releases-${categoryName}-${dateStr}.csv`;
+    
+    link.setAttribute("download", filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast(`Successfully exported ${targetData.length} entries to CSV!`, "success");
+}

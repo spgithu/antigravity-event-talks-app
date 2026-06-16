@@ -1046,4 +1046,68 @@ body.light-theme .char-progress-bar {
     .composer-actions {
         justify-content: flex-end;
     }
+    
+    .controls-right {
+        width: 100%;
+        display: flex;
+        gap: 12px;
+    }
+    .controls-right > * {
+        flex: 1;
+    }
 }
+
+.controls-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.note-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-copy-action {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--text-secondary);
+    border-radius: var(--border-radius-sm);
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.btn-copy-action:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.btn-copy-action.copied {
+    border-color: var(--color-feature) !important;
+    color: var(--color-feature) !important;
+    background: rgba(16, 185, 129, 0.05) !important;
+}
+
+#export-csv-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 14px;
+    font-size: 13px;
+    height: 34px;
+}
+
+.sort-selector select {
+    height: 34px;
+}
+
