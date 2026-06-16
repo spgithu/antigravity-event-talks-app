@@ -7,7 +7,7 @@ let currentSortOrder = 'newest';
 let selectedNoteForTweet = null;
 
 // DOM Elements
-const themeToggleBtn = document.getElementById('theme-toggle');
+const themeCheckbox = document.getElementById('theme-checkbox');
 const refreshBtn = document.getElementById('refresh-button');
 const refreshIcon = document.getElementById('refresh-icon');
 const syncText = document.getElementById('sync-text');
@@ -381,16 +381,24 @@ function initTheme() {
     const storedTheme = localStorage.getItem('theme');
     if (storedTheme === 'light') {
         document.body.classList.add('light-theme');
+        if (themeCheckbox) themeCheckbox.checked = true;
     } else {
         document.body.classList.remove('light-theme');
+        if (themeCheckbox) themeCheckbox.checked = false;
     }
 }
 
-themeToggleBtn.addEventListener('click', () => {
-    document.body.classList.toggle('light-theme');
-    const theme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
-    localStorage.setItem('theme', theme);
-});
+if (themeCheckbox) {
+    themeCheckbox.addEventListener('change', () => {
+        if (themeCheckbox.checked) {
+            document.body.classList.add('light-theme');
+            localStorage.setItem('theme', 'light');
+        } else {
+            document.body.classList.remove('light-theme');
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+}
 
 // Search input bindings
 searchInput.addEventListener('input', (e) => {
